@@ -73,8 +73,62 @@ evaluate_erfa_class <- function(
     c("metric_key", "stat")
   }
 
+  # Resolve sensitivity thresholds by ERFA group.
+  # - scalar => recycled across groups
+  # - named vector => must include HF, MF, LF, RFC, IF (Overall allowed but ignored here)
+  .hydro_erfa_resolve_sensi_thresholds <- function(sensi_threshold) {
+    groups <- c("HF", "MF", "LF", "RFC", "IF")
+
+    if (!is.numeric(sensi_threshold) || length(sensi_threshold) < 1L) {
+      stop("sensi_threshold must be a numeric scalar or a named numeric vector.", call. = FALSE)
+    }
+    if (anyNA(sensi_threshold) || any(!is.finite(sensi_threshold))) {
+      stop("sensi_threshold must not contain NA/Inf values.", call. = FALSE)
+    }
+    if (any(sensi_threshold < 0)) {
+      stop("sensi_threshold values must be >= 0.", call. = FALSE)
+    }
+
+    if (length(sensi_threshold) == 1L) {
+      return(stats::setNames(rep(as.numeric(sensi_threshold), length(groups)), groups))
+    }
+
+    nm <- names(sensi_threshold)
+    if (is.null(nm) || any(!nzchar(nm))) {
+      stop(
+        "When providing multiple sensi_threshold values, supply a named vector with names including: ",
+        paste(groups, collapse = ", "), ".",
+        call. = FALSE
+      )
+    }
+
+    nm <- trimws(nm)
+    bad <- setdiff(nm, c(groups, "Overall"))
+    if (length(bad) > 0L) {
+      stop(
+        "Unknown sensi_threshold group name(s): ", paste(bad, collapse = ", "),
+        ". Allowed: ", paste(c(groups, "Overall"), collapse = ", "), ".",
+        call. = FALSE
+      )
+    }
+
+    missing <- setdiff(groups, nm)
+    if (length(missing) > 0L) {
+      stop(
+        "sensi_threshold is missing required group threshold(s): ",
+        paste(missing, collapse = ", "), ".",
+        call. = FALSE
+      )
+    }
+
+    out <- sensi_threshold[groups]
+    stats::setNames(as.numeric(out), groups)
+  }
+
   .hydro_erfa_validate_tbl(baseline_tbl, "baseline_tbl")
   .hydro_erfa_validate_tbl(scenario_tbl, "scenario_tbl")
+
+  sensi_by_group <- .hydro_erfa_resolve_sensi_thresholds(sensi_threshold)
 
   required_keys <- .hydro_resolve_metric_keys(metric_set = metric_set, metrics = NULL, purpose = NULL)
 
@@ -107,7 +161,8 @@ evaluate_erfa_class <- function(
         100 * (value_scen - value_base) / value_base,
         NA_real_
       ),
-      outside_range = abs(pct_change) > sensi_threshold
+      sensi_threshold_group = as.numeric(sensi_by_group[as.character(.data$group)]),
+      outside_range = abs(pct_change) > sensi_threshold_group
     )
 
   summary_tbl <- df |>
@@ -165,6 +220,8 @@ evaluate_erfa_class <- function(
       group = factor(group, levels = c("HF", "MF", "LF", "RFC", "IF", "Overall"), ordered = TRUE)
     ) |>
     dplyr::arrange(group)
+
   list(detail = df, summary = summary_tbl)
 }
+
 
