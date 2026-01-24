@@ -1,0 +1,24 @@
+Package: hydrokit
+Title: Hydrological Indicators for Climate and Water Resource Analysis
+Version: 0.0.0.9000
+Authors@R: 
+    person("Umit", "Taner", , "umit.taner@deltares.nl", role = c("cre"))
+Description: Collection of R scripts for processing, analysis, and visualization of hydrological data
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Language: en-US
+Depends: 
+    R (>= 4.1.0)
+Imports:
+    stats,
+    utils
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://github.com/tanerumit/hydrokit
+BugReports: https://github.com/tanerumit/hydrokit/issues
