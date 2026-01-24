@@ -1,0 +1,19 @@
+utils::globalVariables(
+  c(
+    "group",
+    "metric_id",
+    "metric_key",
+    "n_outside",
+    "n_total",
+    "outside_range",
+    "pct_change",
+    "perc_outside",
+    "risk_class",
+    "risk_label",
+    "site",
+    "value",
+    "value_base",
+    "value_scen",
+    "year"
+  )
+)

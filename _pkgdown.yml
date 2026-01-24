@@ -1,4 +1,20 @@
-url: ~
-template:
+url: https://yourusername.github.io/hydrokit/
+
+  template:
   bootstrap: 5
 
+navbar:
+  structure:
+  left:  [intro, reference, articles, news]
+right: [search, github]
+
+reference:
+  - title: "Flow Statistics"
+contents:
+  - starts_with("flow_")
+- title: "Drought Indicators"
+contents:
+  - starts_with("drought_")
+- title: "Utilities"
+contents:
+  - starts_with("validate_")

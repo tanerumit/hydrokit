@@ -3,7 +3,7 @@ Title: Hydrological Indicators for Climate and Water Resource Analysis
 Version: 0.0.0.9000
 Authors@R: 
     person("Umit", "Taner", , "umit.taner@deltares.nl", role = c("cre"))
-Description: Collection of R scripts for processing, analysis, and visualization of hydrological data
+Description: Collection of R scripts for processing, analysis, and visualization of hydrological data.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -12,8 +12,12 @@ Language: en-US
 Depends: 
     R (>= 4.1.0)
 Imports:
+    dplyr,
+    lubridate,
     stats,
-    utils
+    tibble,
+    utils,
+    zoo
 Suggests:
     testthat (>= 3.0.0),
     knitr,

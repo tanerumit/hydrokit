@@ -1,6 +1,9 @@
-# ------------------------------------------------------------------------------
-# Internal validation helpers
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# Script: R/utils.R
+# Functions under test: .is_int_scalar(), .is_num_scalar(), .is_chr_scalar(),
+# .validate_numeric_vector()
+# Purpose: Internal scalar/vector validation helpers.
+# ==============================================================================
 
 #' Check if value is a scalar integer
 #' @param x Value to check.
