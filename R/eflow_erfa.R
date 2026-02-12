@@ -1,63 +1,56 @@
-# ==============================================================================
-# Script: R/eflow_erfa.R
-# Functions under test: evaluate_erfa_class()
-# Purpose: Compute ERFA class summaries from registry-selected metric comparisons.
-# ==============================================================================
-
 #' Calculate Environmental Flow Risk Assessment (ERFA) Class
 #'
 #' @description
-#' Compares a registry-defined subset of hydrological metrics (default: ERFA70)
-#' between baseline and scenario summaries, counts metrics outside a sensitivity
-#' threshold by group, and assigns ERFA risk classes.
+#' Compare a registry-defined ERFA metric set between baseline and scenario summaries,
+#' count threshold exceedances by ERFA group, and assign ERFA risk classes.
 #'
 #' @details
-#' Inputs should be summary tables returned by \code{calculate_hydro_metrics()} and
-#' must contain \code{metric_key}, \code{group}, \code{stat}, and \code{value}. If a
-#' \code{site} column is present in either table, comparisons are performed per site.
-#' Percent change is computed as \code{100 * (scenario - baseline) / baseline}; when
-#' the baseline value is non-finite or zero, percent change is set to NA and the
-#' metric is not counted as outside the threshold. Only metrics present in both
-#' tables are compared (inner join).
+#' This function compares baseline vs scenario **values indexed by `metric_id`**.
+#' All ERFA metadata (group assignment, base `metric_key`, summary statistic `stat`,
+#' and legacy metric name `metric`) are taken from the metric-set registry.
 #'
-#' @param baseline_tbl Summary table from \code{calculate_hydro_metrics()} representing
-#'   baseline conditions.
-#' @param scenario_tbl Summary table from \code{calculate_hydro_metrics()} representing
-#'   scenario conditions.
-#' @param sensi_threshold Numeric scalar > 0. Absolute percent-change threshold used
-#'   to flag metrics as outside the sensitivity range (default 30).
-#' @param stat Character scalar. Summary statistic to compare (default "med").
-#' @param metric_set Character scalar. Registered metric set to evaluate (default
-#'   "erfa70").
+#' If `group_cols` is provided, ERFA is computed separately for each unique
+#' combination of grouping column values found in the inputs. Technically this is
+#' implemented by joining baseline and scenario on `metric_id` plus `group_cols`,
+#' then summarising within each group-combination.
 #'
-#' @return
-#' A list with:
-#' \itemize{
-#' \item \code{detail}: metric-level comparison table with baseline/scenario values,
-#'   percent change, and a logical \code{outside_range} flag.
-#' \item \code{summary}: group-level and overall ERFA classification table with counts,
-#'   percent outside, and risk class/label.
-#' }
+#' @param baseline_tbl `data.frame`/tibble with at minimum:
+#'   - `metric_id` (integer-like)
+#'   - `value` (numeric)
+#'   If `group_cols` is not `NULL`, those columns must also be present.
 #'
-#' @examples
-#' date <- seq.Date(as.Date("2001-01-01"), as.Date("2002-12-31"), by = "day")
-#' Q <- 2 + sin(seq_along(date) * 2 * pi / 365)
-#' baseline <- calculate_hydro_metrics(Q, date)
-#' scenario <- calculate_hydro_metrics(Q * 1.1, date)
-#' erfa <- evaluate_erfa_class(baseline, scenario, sensi_threshold = 30, stat = "med")
-#' erfa$summary
+#' @param scenario_tbl Same requirements as `baseline_tbl`.
+#'
+#' @param sensi_threshold Numeric sensitivity threshold(s) in **percent** for exceedance counting.
+#'   Either a single numeric scalar (recycled to all ERFA groups), or a named numeric vector
+#'   with names `HF`, `MF`, `LF`, `RFC`, and `IF`. Values must be finite and `>= 0`.
+#'
+#' @param metric_set Character scalar metric-set name. Currently supports `"erfa70"`
+#'   which resolves the full expanded mapping via `.hydro_registry_erfa70_expanded()`.
+#'
+#' @param group_cols Character vector of grouping columns to evaluate ERFA per level/combination.
+#'   Default `NULL` computes a single ERFA result for the entire tables. Examples:
+#'   - `group_cols = "site"`: compute per site
+#'   - `group_cols = c("site", "scenario")`: compute per site×scenario combination
+#'
+#' @return A list with:
+#'   - `detail`: per-metric comparisons including registry metadata and computed fields.
+#'   - `summary`: per-group and overall counts and ERFA risk class/label, per grouping combination.
+#'
+#' @import dplyr
 #' @export
 evaluate_erfa_class <- function(
     baseline_tbl,
     scenario_tbl,
     sensi_threshold = 30,
-    stat = "med",
-    metric_set = "erfa70"
+    metric_set = "erfa70",
+    group_cols = NULL,
+    scenario_cols = NULL
 ) {
 
-  # Validate required ERFA columns; args: x table-like object, name character scalar.
-  .hydro_erfa_validate_tbl <- function(x, name) {
-    req <- c("metric_key", "group", "stat", "value")
+  # ---- helpers ----------------------------------------------------------------
+
+  .hydro_erfa_validate_cols <- function(x, name, req) {
     miss <- setdiff(req, names(x))
     if (length(miss) > 0L) {
       stop(name, " is missing required columns: ", paste(miss, collapse = ", "), call. = FALSE)
@@ -65,17 +58,21 @@ evaluate_erfa_class <- function(
     invisible(TRUE)
   }
 
-  # Determine join keys for baseline/scenario tables; args: baseline_tbl, scenario_tbl data frames.
-  .hydro_erfa_join_keys <- function(baseline_tbl, scenario_tbl) {
-    if ("site" %in% names(baseline_tbl) || "site" %in% names(scenario_tbl)) {
-      return(c("site", "metric_key", "stat"))
-    }
-    c("metric_key", "stat")
+  .hydro_erfa_normalize_cols <- function(x) {
+    if (is.null(x)) return(NULL)
+    if (!is.character(x)) stop("Grouping column arguments must be NULL or a character vector.", call. = FALSE)
+    x <- unique(stats::na.omit(trimws(x)))
+    if (length(x) == 0L) return(NULL)
+    if (any(!nzchar(x))) stop("Grouping column arguments contain empty column name(s).", call. = FALSE)
+    x
   }
 
-  # Resolve sensitivity thresholds by ERFA group.
-  # - scalar => recycled across groups
-  # - named vector => must include HF, MF, LF, RFC, IF (Overall allowed but ignored here)
+  .hydro_erfa_resolve_metric_def <- function(metric_set) {
+    metric_set <- as.character(metric_set)[1]
+    if (identical(metric_set, "erfa70")) return(.hydro_registry_erfa70_expanded())
+    stop("Unknown metric_set for ERFA evaluation: ", metric_set, call. = FALSE)
+  }
+
   .hydro_erfa_resolve_sensi_thresholds <- function(sensi_threshold) {
     groups <- c("HF", "MF", "LF", "RFC", "IF")
 
@@ -125,36 +122,72 @@ evaluate_erfa_class <- function(
     stats::setNames(as.numeric(out), groups)
   }
 
-  .hydro_erfa_validate_tbl(baseline_tbl, "baseline_tbl")
-  .hydro_erfa_validate_tbl(scenario_tbl, "scenario_tbl")
+  # ---- normalize args ---------------------------------------------------------
 
+  group_cols <- .hydro_erfa_normalize_cols(group_cols)
+  scenario_cols <- .hydro_erfa_normalize_cols(scenario_cols)
+
+  # group_cols apply to both; scenario_cols apply only to scenario_tbl
+  if (!is.null(group_cols) && any(group_cols %in% c("metric_id", "value"))) {
+    stop("group_cols must not include 'metric_id' or 'value'.", call. = FALSE)
+  }
+  if (!is.null(scenario_cols) && any(scenario_cols %in% c("metric_id", "value"))) {
+    stop("scenario_cols must not include 'metric_id' or 'value'.", call. = FALSE)
+  }
+  if (!is.null(group_cols) && !is.null(scenario_cols) && length(intersect(group_cols, scenario_cols)) > 0L) {
+    stop("group_cols and scenario_cols must not overlap.", call. = FALSE)
+  }
+
+  # ---- validate inputs --------------------------------------------------------
+
+  .hydro_erfa_validate_cols(baseline_tbl, "baseline_tbl", c("metric_id", "value", group_cols))
+  .hydro_erfa_validate_cols(scenario_tbl, "scenario_tbl", c("metric_id", "value", group_cols, scenario_cols))
+
+  baseline_tbl$metric_id <- as.integer(baseline_tbl$metric_id)
+  scenario_tbl$metric_id <- as.integer(scenario_tbl$metric_id)
+
+  if (anyNA(baseline_tbl$metric_id)) stop("baseline_tbl$metric_id contains NA after coercion.", call. = FALSE)
+  if (anyNA(scenario_tbl$metric_id)) stop("scenario_tbl$metric_id contains NA after coercion.", call. = FALSE)
+
+  metric_def <- .hydro_erfa_resolve_metric_def(metric_set)
   sensi_by_group <- .hydro_erfa_resolve_sensi_thresholds(sensi_threshold)
 
-  required_keys <- .hydro_resolve_metric_keys(metric_set = metric_set, metrics = NULL, purpose = NULL)
+  # ---- enforce "compare each scenario to baseline" semantics -------------------
+  # 1) only keep scenario group-combos that exist in baseline (do not invent baseline groups)
+  if (!is.null(group_cols) && length(group_cols) > 0L) {
+    base_groups <- dplyr::distinct(baseline_tbl, dplyr::across(dplyr::all_of(group_cols)))
+    scenario_tbl <- dplyr::semi_join(scenario_tbl, base_groups, by = group_cols)
+  }
 
-  base_f <- baseline_tbl[
-    baseline_tbl$metric_key %in% required_keys & baseline_tbl$stat == stat,
-    ,
-    drop = FALSE
-  ]
+  # 2) restrict both tables to metric_ids defined by metric_set (authoritative)
+  baseline_tbl <- dplyr::semi_join(baseline_tbl, metric_def[, c("metric_id")], by = "metric_id")
+  scenario_tbl <- dplyr::semi_join(scenario_tbl, metric_def[, c("metric_id")], by = "metric_id")
 
-  scen_f <- scenario_tbl[
-    scenario_tbl$metric_key %in% required_keys & scenario_tbl$stat == stat,
-    ,
-    drop = FALSE
-  ]
+  # 3) attach registry metadata (group, metric_key, stat, metric)
+  base_f <- dplyr::inner_join(
+    baseline_tbl |>
+      dplyr::select(dplyr::all_of(c(group_cols, "metric_id", "value"))) |>
+      dplyr::rename(value_base = value),
+    metric_def,
+    by = "metric_id"
+  )
 
-  join_by <- .hydro_erfa_join_keys(base_f, scen_f)
+  scen_f <- dplyr::inner_join(
+    scenario_tbl |>
+      dplyr::select(dplyr::all_of(c(group_cols, scenario_cols, "metric_id", "value"))) |>
+      dplyr::rename(value_scen = value),
+    metric_def,
+    by = "metric_id"
+  )
 
-  df <- base_f |>
-    dplyr::select(dplyr::all_of(intersect(c("site", "metric_id", "metric_key", "group", "stat", "metric", "value"), names(base_f)))) |>
-    dplyr::rename(value_base = value) |>
-    dplyr::inner_join(
-      scen_f |>
-        dplyr::select(dplyr::all_of(intersect(c("site", "metric_key", "stat", "value"), names(scen_f)))) |>
-        dplyr::rename(value_scen = value),
-      by = join_by
-    ) |>
+  # 4) broadcast baseline across scenario_cols by joining baseline onto scenario rows
+  join_keys <- c(group_cols, "metric_id")
+  df <- dplyr::inner_join(
+    scen_f,
+    base_f |>
+      dplyr::select(dplyr::all_of(c(join_keys, "value_base"))),
+    by = join_keys
+  ) |>
     dplyr::mutate(
       pct_change = dplyr::if_else(
         is.finite(value_base) & value_base != 0,
@@ -165,8 +198,13 @@ evaluate_erfa_class <- function(
       outside_range = abs(pct_change) > sensi_threshold_group
     )
 
+  # ---- summaries --------------------------------------------------------------
+
+  # Per ERFA group within each group_cols × scenario_cols combination
+  summary_keys <- c(group_cols, scenario_cols, "group")
+
   summary_tbl <- df |>
-    dplyr::group_by(group) |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(summary_keys))) |>
     dplyr::summarise(
       n_total = dplyr::n(),
       n_outside = sum(outside_range, na.rm = TRUE),
@@ -174,15 +212,18 @@ evaluate_erfa_class <- function(
       .groups = "drop"
     )
 
-  total_row <- summary_tbl |>
+  # Overall row within each group_cols × scenario_cols combination
+  overall_tbl <- summary_tbl |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(c(group_cols, scenario_cols)))) |>
     dplyr::summarise(
       group = "Overall",
       n_total = sum(n_total),
       n_outside = sum(n_outside),
-      perc_outside = 100 * n_outside / n_total
+      perc_outside = 100 * n_outside / n_total,
+      .groups = "drop"
     )
 
-  summary_tbl <- dplyr::bind_rows(summary_tbl, total_row)
+  summary_tbl <- dplyr::bind_rows(summary_tbl, overall_tbl)
 
   risk_thresholds <- tibble::tribble(
     ~group, ~low, ~medium, ~high,
@@ -213,15 +254,11 @@ evaluate_erfa_class <- function(
           "Medium (\U0001F7E7 Amber)",
           "High (\U0001F7E5 Red)"
         )
-      )
-    ) |>
-    dplyr::select(group, n_total, n_outside, perc_outside, risk_class, risk_label) |>
-    dplyr::mutate(
+      ),
       group = factor(group, levels = c("HF", "MF", "LF", "RFC", "IF", "Overall"), ordered = TRUE)
     ) |>
-    dplyr::arrange(group)
+    dplyr::select(dplyr::all_of(c(group_cols, scenario_cols)), group, n_total, n_outside, perc_outside, risk_class, risk_label) |>
+    dplyr::arrange(dplyr::across(dplyr::all_of(c(group_cols, scenario_cols))), group)
 
   list(detail = df, summary = summary_tbl)
 }
-
-

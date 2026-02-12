@@ -8,53 +8,53 @@ evaluate_erfa_class(
   baseline_tbl,
   scenario_tbl,
   sensi_threshold = 30,
-  stat = "med",
-  metric_set = "erfa70"
+  metric_set = "erfa70",
+  group_cols = NULL,
+  scenario_cols = NULL
 )
 }
 \arguments{
-\item{baseline_tbl}{Summary table from \code{calculate_hydro_metrics()} representing
-baseline conditions.}
+\item{baseline_tbl}{\code{data.frame}/tibble with at minimum:
+\itemize{
+\item \code{metric_id} (integer-like)
+\item \code{value} (numeric)
+If \code{group_cols} is not \code{NULL}, those columns must also be present.
+}}
 
-\item{scenario_tbl}{Summary table from \code{calculate_hydro_metrics()} representing
-scenario conditions.}
+\item{scenario_tbl}{Same requirements as \code{baseline_tbl}.}
 
-\item{sensi_threshold}{Numeric scalar > 0. Absolute percent-change threshold used
-to flag metrics as outside the sensitivity range (default 30).}
+\item{sensi_threshold}{Numeric sensitivity threshold(s) in \strong{percent} for exceedance counting.
+Either a single numeric scalar (recycled to all ERFA groups), or a named numeric vector
+with names \code{HF}, \code{MF}, \code{LF}, \code{RFC}, and \code{IF}. Values must be finite and \verb{>= 0}.}
 
-\item{stat}{Character scalar. Summary statistic to compare (default "med").}
+\item{metric_set}{Character scalar metric-set name. Currently supports \code{"erfa70"}
+which resolves the full expanded mapping via \code{.hydro_registry_erfa70_expanded()}.}
 
-\item{metric_set}{Character scalar. Registered metric set to evaluate (default
-"erfa70").}
+\item{group_cols}{Character vector of grouping columns to evaluate ERFA per level/combination.
+Default \code{NULL} computes a single ERFA result for the entire tables. Examples:
+\itemize{
+\item \code{group_cols = "site"}: compute per site
+\item \code{group_cols = c("site", "scenario")}: compute per site×scenario combination
+}}
 }
 \value{
 A list with:
 \itemize{
-\item \code{detail}: metric-level comparison table with baseline/scenario values,
-percent change, and a logical \code{outside_range} flag.
-\item \code{summary}: group-level and overall ERFA classification table with counts,
-percent outside, and risk class/label.
+\item \code{detail}: per-metric comparisons including registry metadata and computed fields.
+\item \code{summary}: per-group and overall counts and ERFA risk class/label, per grouping combination.
 }
 }
 \description{
-Compares a registry-defined subset of hydrological metrics (default: ERFA70)
-between baseline and scenario summaries, counts metrics outside a sensitivity
-threshold by group, and assigns ERFA risk classes.
+Compare a registry-defined ERFA metric set between baseline and scenario summaries,
+count threshold exceedances by ERFA group, and assign ERFA risk classes.
 }
 \details{
-Inputs should be summary tables returned by \code{calculate_hydro_metrics()} and
-must contain \code{metric_key}, \code{group}, \code{stat}, and \code{value}. If a
-\code{site} column is present in either table, comparisons are performed per site.
-Percent change is computed as \code{100 * (scenario - baseline) / baseline}; when
-the baseline value is non-finite or zero, percent change is set to NA and the
-metric is not counted as outside the threshold. Only metrics present in both
-tables are compared (inner join).
-}
-\examples{
-date <- seq.Date(as.Date("2001-01-01"), as.Date("2002-12-31"), by = "day")
-Q <- 2 + sin(seq_along(date) * 2 * pi / 365)
-baseline <- calculate_hydro_metrics(Q, date)
-scenario <- calculate_hydro_metrics(Q * 1.1, date)
-erfa <- evaluate_erfa_class(baseline, scenario, sensi_threshold = 30, stat = "med")
-erfa$summary
+This function compares baseline vs scenario \strong{values indexed by \code{metric_id}}.
+All ERFA metadata (group assignment, base \code{metric_key}, summary statistic \code{stat},
+and legacy metric name \code{metric}) are taken from the metric-set registry.
+
+If \code{group_cols} is provided, ERFA is computed separately for each unique
+combination of grouping column values found in the inputs. Technically this is
+implemented by joining baseline and scenario on \code{metric_id} plus \code{group_cols},
+then summarising within each group-combination.
 }
