@@ -66,6 +66,7 @@ testthat::test_that("registry compute matches annual output for a single year", 
     date = datev,
     metrics = keys,
     summaries = c("med", "iqr"),
+    water_year_start = 1L,
     return_annual = TRUE
   )
 
@@ -155,7 +156,8 @@ testthat::test_that("summary outputs for ERFA base metrics match registry annual
     Q = Q,
     date = datev,
     metrics = keys,
-    summaries = c("med", "iqr")
+    summaries = c("med", "iqr"),
+    water_year_start = 1L
   )
 
   for (k in seq_along(keys)) {

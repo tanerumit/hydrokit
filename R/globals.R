@@ -1,6 +1,10 @@
 utils::globalVariables(
   c(
+    "grain",
     "group",
+    "high",
+    "low",
+    "medium",
     "metric_id",
     "metric_key",
     "n_outside",
@@ -10,6 +14,7 @@ utils::globalVariables(
     "perc_outside",
     "risk_class",
     "risk_label",
+    "sensi_threshold_group",
     "site",
     "value",
     "value_base",

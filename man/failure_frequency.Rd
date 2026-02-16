@@ -21,7 +21,7 @@ failure_frequency(
 \item{no_data}{Character scalar: value if no valid timesteps remain: "na" (default) or "zero".}
 }
 \value{
-Numeric scalar (events per timestep) in \link{0,1} (or NA_real_).
+Numeric scalar (events per timestep) between 0 and 1 (or NA_real_).
 }
 \description{
 Failure frequency is the number of distinct failure events (contiguous failure runs)

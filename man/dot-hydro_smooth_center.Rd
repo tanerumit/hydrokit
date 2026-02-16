@@ -2,19 +2,11 @@
 % Please edit documentation in R/eflow_metrics.R
 \name{.hydro_smooth_center}
 \alias{.hydro_smooth_center}
-\title{Compute a centered rolling mean with NA padding.}
+\title{Centered rolling mean with NA padding.}
 \usage{
 .hydro_smooth_center(x, k)
 }
-\arguments{
-\item{x}{Numeric vector to smooth.}
-
-\item{k}{Integer window length.}
-}
-\value{
-Numeric vector of rolling means.
-}
 \description{
-Compute a centered rolling mean with NA padding.
+Centered rolling mean with NA padding.
 }
 \keyword{internal}

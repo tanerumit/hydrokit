@@ -22,7 +22,7 @@ resilience_hashimoto(
 "na" (default), "one", or "zero".}
 }
 \value{
-Numeric scalar in \link{0,1} (or NA_real_).
+Numeric scalar between 0 and 1 (or NA_real_).
 }
 \description{
 Resilience is the conditional probability of returning to success at the next

@@ -10,7 +10,7 @@
 \item{datev}{Date vector to validate.}
 }
 \value{
-Invisible TRUE when validation passes.
+Invisible TRUE.
 }
 \description{
 Validate daily date ordering, uniqueness, and regular spacing.

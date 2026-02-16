@@ -1,0 +1,130 @@
+CONTEXT
+You are modifying an R package repo (hydrokit). Work in-place from the package root.
+
+GOAL
+Improve correctness, readability, maintainability, numerical stability, and testability with minimal, surgical changes.
+
+HARD CONSTRAINTS (NON-NEGOTIABLE)
+- Keep all files UTF-8.
+- Do not change exported function names, arguments, defaults, or return structures unless explicitly instructed.
+- Preserve numerical outputs within tolerance 1e-12 unless methodology changes are explicitly requested.
+- Do not add new external dependencies. Do not require Suggests packages at runtime. If unavoidable, guard with requireNamespace() and justify.
+- Do not introduce purrr or functional-programming rewrites; use explicit for loops and base R idioms.
+- Preserve deterministic behavior; control randomness/seeds explicitly where relevant.
+- Minimal diff: modify only what is necessary; no sweeping refactors or style-only reformatting. Do not rename/move files unless instructed.
+- Do not silently change user-visible outputs, warnings, or errors; document any necessary changes in the final summary.
+- Do not silently drop columns/fields/rows.
+
+NON-INTERACTIVE EXECUTION (MANDATORY)
+- Execute end-to-end in a single pass without questions or confirmations.
+- Do not provide interim progress updates.
+- If ambiguous, apply the smallest conservative assumption consistent with package conventions and document it at the end.
+- Update tests when behavior changes or coverage gaps exist.
+- Run tests at the end; stop only when requested changes are implemented and tests pass (or only external/irreproducible failures remain).
+
+STYLE & STRUCTURE
+- Prefer guard clauses/early returns; explicit type/length checks (use existing helpers where available).
+- Avoid deep nesting; extract helpers only when it materially improves readability.
+- Avoid asymptotic regressions; preallocate; avoid O(n²) patterns on time-series data.
+
+DOCUMENTATION
+- Exported functions: roxygen must match behavior exactly (@description one paragraph; @details brief assumptions/edge cases; params types/units/NA; return exact structure; examples minimal/fast; use \dontrun{} for expensive).
+- Internal functions: minimal docs; use @keywords internal only if needed. Do not invent behavior.
+
+TESTS
+- Tests must be deterministic; no network, large fixtures, or uncontrolled randomness.
+- Cover input validation, NA handling, empty/constant series, methodological consistency, return structure.
+- Group tests by function/group; at top of each test file list functions under test with relative paths.
+
+FINAL OUTPUT (ONCE COMPLETE)
+- Bullet summary: what changed, why, risks/assumptions.
+- List of files changed.
+- Explicit design choices.
+- Report remaining issues only if external/irreproducible.
+
+TASK
+- Fix any broken unit tests 
+- Fix roxygen documentation problems 
+
+SCOPE (FILES)
+- You are allowed to change all files in the package folder.
+	/R
+	/tests
+
+IMPLEMENTATION REQUIREMENTS
+- No backwards compatability necessary
+- Fix the documentation issues identified by devtools:
+
+==> devtools::document(roclets = c('rd', 'collate', 'namespace'))
+
+ℹ Updating hydrokit documentation
+ℹ Loading hydrokit
+Warning in withCallingHandlers(.External2(C_parseRd, tcon, srcfile, "UTF-8",  :
+  C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:102: unexpected section header '\value'
+Warning in withCallingHandlers(.External2(C_parseRd, tcon, srcfile, "UTF-8",  :
+  C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:117: unexpected section header '\description'
+Warning in withCallingHandlers(.External2(C_parseRd, tcon, srcfile, "UTF-8",  :
+  C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:121: unexpected section header '\details'
+Warning in withCallingHandlers(.External2(C_parseRd, tcon, srcfile, "UTF-8",  :
+  C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:146: unexpected section header '\examples'
+Warning in withCallingHandlers(.External2(C_parseRd, tcon, srcfile, "UTF-8",  :
+  C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:156: unexpected END_OF_INPUT '
+'
+✖ wres_metrics.R:160: @return Could not resolve link to topic "0,1" in the
+  dependencies or base packages.
+ℹ If you haven't documented "0,1" yet, or just changed its name, this is normal.
+  Once "0,1" is documented, this warning goes away.
+ℹ Make sure that the name of the topic is spelled correctly.
+ℹ Always list the linked package as a dependency.
+ℹ Alternatively, you can fully qualify the link with a package name.
+✖ wres_metrics.R:194: @return Could not resolve link to topic "0,1" in the
+  dependencies or base packages.
+ℹ If you haven't documented "0,1" yet, or just changed its name, this is normal.
+  Once "0,1" is documented, this warning goes away.
+ℹ Make sure that the name of the topic is spelled correctly.
+ℹ Always list the linked package as a dependency.
+ℹ Alternatively, you can fully qualify the link with a package name.
+✖ wres_metrics.R:284: @return Could not resolve link to topic "0,1" in the
+  dependencies or base packages.
+ℹ If you haven't documented "0,1" yet, or just changed its name, this is normal.
+  Once "0,1" is documented, this warning goes away.
+ℹ Make sure that the name of the topic is spelled correctly.
+ℹ Always list the linked package as a dependency.
+ℹ Alternatively, you can fully qualify the link with a package name.
+Documentation completed
+
+==> Rcmd.exe INSTALL --preclean --no-multiarch --with-keep.source hydrokit
+
+* installing to library 'C:/Users/taner/AppData/Local/R/win-library/4.5/_build'
+* installing *source* package 'hydrokit' ...
+** this is package 'hydrokit' version '0.0.0.9000'
+** using staged installation
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:85: unknown macro '\item'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:88: unknown macro '\item'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:91: unknown macro '\item'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:94: unknown macro '\item'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:97: unknown macro '\item'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:100: unknown macro '\item'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:102: unexpected section header '\value'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:117: unexpected section header '\description'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:121: unexpected section header '\details'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:146: unexpected section header '\examples'
+Warning: C:/Users/taner/WS/hydrokit/man/calculate_hydro_metrics.Rd:156: unexpected END_OF_INPUT '
+'
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded from temporary location
+** testing if installed package can be loaded from final location
+** testing if installed package keeps a record of temporary installation path
+* DONE (hydrokit)
+
+
+
+
+DONE CRITERIA
+- All unit tests pass.

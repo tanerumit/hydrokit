@@ -21,7 +21,7 @@ reliability_hashimoto(
 \item{no_data}{Character scalar: value if no valid timesteps remain: "na" (default) or "zero".}
 }
 \value{
-Numeric scalar in \link{0,1} (or NA_real_).
+Numeric scalar between 0 and 1 (or NA_real_).
 }
 \description{
 Reliability is the long-run probability of satisfactory performance:

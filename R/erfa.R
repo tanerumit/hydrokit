@@ -31,13 +31,17 @@
 #' @param group_cols Character vector of grouping columns to evaluate ERFA per level/combination.
 #'   Default `NULL` computes a single ERFA result for the entire tables. Examples:
 #'   - `group_cols = "site"`: compute per site
-#'   - `group_cols = c("site", "scenario")`: compute per site×scenario combination
+#'   - `group_cols = c("site", "scenario")`: compute per siteÃ—scenario combination
 #'
-#' @return A list with:
+#' @return A list of class \code{erfa_result} with:
 #'   - `detail`: per-metric comparisons including registry metadata and computed fields.
 #'   - `summary`: per-group and overall counts and ERFA risk class/label, per grouping combination.
 #'
-#' @import dplyr
+#' The object has \code{print} and \code{summary} methods. Use
+#' \code{summary(result)} to extract the summary tibble; \code{print(result)}
+#' displays a compact risk overview.
+#'
+#' @importFrom rlang .data
 #' @export
 evaluate_erfa_class <- function(
     baseline_tbl,
@@ -189,18 +193,19 @@ evaluate_erfa_class <- function(
     by = join_keys
   ) |>
     dplyr::mutate(
-      pct_change = dplyr::if_else(
-        is.finite(value_base) & value_base != 0,
-        100 * (value_scen - value_base) / value_base,
-        NA_real_
-      ),
+      pct_change = dplyr::case_when(
+        !is.finite(value_base) | !is.finite(value_scen) ~ NA_real_,
+        value_base == 0 & value_scen == 0 ~ 0,
+        value_base == 0 & value_scen != 0 ~ Inf,
+        TRUE ~ 100 * (value_scen - value_base) / value_base
+    ),
       sensi_threshold_group = as.numeric(sensi_by_group[as.character(.data$group)]),
       outside_range = abs(pct_change) > sensi_threshold_group
     )
 
   # ---- summaries --------------------------------------------------------------
 
-  # Per ERFA group within each group_cols × scenario_cols combination
+  # Per ERFA group within each group_cols Ã— scenario_cols combination
   summary_keys <- c(group_cols, scenario_cols, "group")
 
   summary_tbl <- df |>
@@ -212,7 +217,7 @@ evaluate_erfa_class <- function(
       .groups = "drop"
     )
 
-  # Overall row within each group_cols × scenario_cols combination
+  # Overall row within each group_cols Ã— scenario_cols combination
   overall_tbl <- summary_tbl |>
     dplyr::group_by(dplyr::across(dplyr::all_of(c(group_cols, scenario_cols)))) |>
     dplyr::summarise(
@@ -260,5 +265,112 @@ evaluate_erfa_class <- function(
     dplyr::select(dplyr::all_of(c(group_cols, scenario_cols)), group, n_total, n_outside, perc_outside, risk_class, risk_label) |>
     dplyr::arrange(dplyr::across(dplyr::all_of(c(group_cols, scenario_cols))), group)
 
-  list(detail = df, summary = summary_tbl)
+  out <- list(detail = df, summary = summary_tbl)
+  class(out) <- c("erfa_result", "list")
+  out
+}
+
+
+#' Print method for ERFA result objects
+#'
+#' Displays a compact summary of the ERFA risk assessment including per-group
+#' exceedance counts and overall risk classification.
+#'
+#' @param x An object of class \code{erfa_result} (returned by
+#'   \code{\link{evaluate_erfa_class}}).
+#' @param ... Additional arguments (currently ignored).
+#'
+#' @return Invisible \code{x}.
+#' @export
+print.erfa_result <- function(x, ...) {
+
+  s <- x$summary
+
+  # Identify grouping columns (everything that isn't a standard ERFA output column)
+  erfa_cols <- c("group", "n_total", "n_outside", "perc_outside",
+                 "risk_class", "risk_label")
+  extra_cols <- setdiff(names(s), erfa_cols)
+
+  # If there are grouping columns, print one block per combination
+  if (length(extra_cols) > 0L) {
+    combos <- unique(s[, extra_cols, drop = FALSE])
+    for (i in seq_len(nrow(combos))) {
+      combo_label <- paste(
+        extra_cols, "=",
+        vapply(combos[i, ], as.character, character(1)),
+        collapse = ", "
+      )
+      cat("--- ERFA Risk Assessment:", combo_label, "---\n")
+      .print_erfa_block(s, combos[i, , drop = FALSE], extra_cols)
+      cat("\n")
+    }
+  } else {
+    cat("--- ERFA Risk Assessment ---\n")
+    .print_erfa_block(s, NULL, character(0))
+  }
+
+  invisible(x)
+}
+
+
+#' Internal: print a single ERFA summary block
+#' @param s Summary tibble.
+#' @param combo_row One-row data.frame of grouping values, or NULL.
+#' @param extra_cols Character vector of grouping column names.
+#' @keywords internal
+.print_erfa_block <- function(s, combo_row, extra_cols) {
+
+  if (!is.null(combo_row) && length(extra_cols) > 0L) {
+    # Filter to this combination
+    keep <- rep(TRUE, nrow(s))
+    for (col in extra_cols) {
+      keep <- keep & (as.character(s[[col]]) == as.character(combo_row[[col]]))
+    }
+    s <- s[keep, , drop = FALSE]
+  }
+
+  # Overall row
+  overall <- s[s$group == "Overall", , drop = FALSE]
+  groups  <- s[s$group != "Overall", , drop = FALSE]
+
+  if (nrow(groups) > 0L) {
+    for (j in seq_len(nrow(groups))) {
+      cat(sprintf(
+        "  %-8s %2d / %2d metrics outside threshold (%4.1f%%)\n",
+        as.character(groups$group[j]),
+        groups$n_outside[j],
+        groups$n_total[j],
+        groups$perc_outside[j]
+      ))
+    }
+  }
+
+  if (nrow(overall) > 0L) {
+    cat(sprintf(
+      "  %-8s %2d / %2d metrics outside threshold (%4.1f%%)\n",
+      "Overall",
+      overall$n_outside[1],
+      overall$n_total[1],
+      overall$perc_outside[1]
+    ))
+    cat("  Risk class: ", as.character(overall$risk_label[1]), "\n")
+  }
+}
+
+
+#' Summary method for ERFA result objects
+#'
+#' Returns the per-group summary tibble from an ERFA risk assessment, which
+#' includes exceedance counts, percentages, and risk classifications.
+#'
+#' @param object An object of class \code{erfa_result} (returned by
+#'   \code{\link{evaluate_erfa_class}}).
+#' @param ... Additional arguments (currently ignored).
+#'
+#' @return The summary tibble (a \code{tbl_df}) with columns: grouping columns
+#'   (if any), \code{group}, \code{n_total}, \code{n_outside},
+#'   \code{perc_outside}, \code{risk_class}, and \code{risk_label}.
+#' @export
+summary.erfa_result <- function(object, ...) {
+  object$summary
 }

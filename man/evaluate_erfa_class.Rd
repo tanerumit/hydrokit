@@ -34,15 +34,19 @@ which resolves the full expanded mapping via \code{.hydro_registry_erfa70_expand
 Default \code{NULL} computes a single ERFA result for the entire tables. Examples:
 \itemize{
 \item \code{group_cols = "site"}: compute per site
-\item \code{group_cols = c("site", "scenario")}: compute per site×scenario combination
+\item \code{group_cols = c("site", "scenario")}: compute per siteÃ—scenario combination
 }}
 }
 \value{
-A list with:
+A list of class \code{erfa_result} with:
 \itemize{
 \item \code{detail}: per-metric comparisons including registry metadata and computed fields.
 \item \code{summary}: per-group and overall counts and ERFA risk class/label, per grouping combination.
 }
+
+The object has \code{print} and \code{summary} methods. Use
+\code{summary(result)} to extract the summary tibble; \code{print(result)}
+displays a compact risk overview.
 }
 \description{
 Compare a registry-defined ERFA metric set between baseline and scenario summaries,

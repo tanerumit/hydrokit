@@ -2,14 +2,14 @@
 % Please edit documentation in R/eflow_metrics.R
 \name{.hydro_metric_registry_base}
 \alias{.hydro_metric_registry_base}
-\title{Build the base metric registry with group, label, and purpose tags.}
+\title{Build (or retrieve from cache) the base metric registry.}
 \usage{
 .hydro_metric_registry_base()
 }
 \value{
-Tibble with metric definitions and purpose list-column.
+Tibble with metric definitions.
 }
 \description{
-Build the base metric registry with group, label, and purpose tags.
+Build (or retrieve from cache) the base metric registry.
 }
 \keyword{internal}

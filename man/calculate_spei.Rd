@@ -42,7 +42,11 @@ the series is assumed to begin at (1, 1) with monthly frequency.}
 }
 \value{
 A numeric vector of SPEI values (same length as input),
-corresponding to the fitted index at each time step.
+corresponding to the fitted index at each time step. If the underlying
+distribution fit emitted warnings, they are stored in the
+\code{"fit_warnings"} attribute (accessible via
+\code{attr(result, "fit_warnings")}). A user-facing warning is issued
+whenever the output contains \code{NaN} values.
 }
 \description{
 Computes the Standardized Precipitation Evapotranspiration Index (SPEI)
@@ -83,17 +87,18 @@ abline(h = c(-2, -1, 0, 1, 2), lty = 2, col = "gray")
 
 }
 \references{
-Beguería, S., Vicente-Serrano, S. M., Reig, F., & Latorre, B. (2014).
+BeguerÃ­a, S., Vicente-Serrano, S. M., Reig, F., & Latorre, B. (2014).
 Standardized precipitation evapotranspiration index (SPEI) revisited:
 parameter fitting, evapotranspiration models, tools, datasets and trends worldwide.
-\emph{International Journal of Climatology, 34}(10), 3001–3023.
+\emph{International Journal of Climatology, 34}(10), 3001â€“3023.
 
-Vicente-Serrano, S. M., Beguería, S., & López-Moreno, J. I. (2010).
+Vicente-Serrano, S. M., BeguerÃ­a, S., & LÃ³pez-Moreno, J. I. (2010).
 A multiscalar drought index sensitive to global warming:
 The Standardized Precipitation Evapotranspiration Index.
-\emph{Journal of Climate, 23}(7), 1696–1718.
+\emph{Journal of Climate, 23}(7), 1696â€“1718.
 }
 \seealso{
-\code{\link[SPEI:spei]{SPEI::spei()}} for the underlying implementation
-and \code{\link[SPEI:spi]{SPEI::spi()}} for the precipitation-only variant.
+\code{\link{calculate_spi}} for the precipitation-only variant (SPI),
+\code{\link[SPEI:spei]{SPEI::spei()}} for the underlying implementation,
+and \code{\link[SPEI:spi]{SPEI::spi()}} for the SPEI package's SPI function.
 }

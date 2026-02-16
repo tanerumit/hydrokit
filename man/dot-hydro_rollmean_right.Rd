@@ -2,19 +2,11 @@
 % Please edit documentation in R/eflow_metrics.R
 \name{.hydro_rollmean_right}
 \alias{.hydro_rollmean_right}
-\title{Compute a right-aligned rolling mean with NA padding.}
+\title{Right-aligned rolling mean with NA padding.}
 \usage{
 .hydro_rollmean_right(x, k)
 }
-\arguments{
-\item{x}{Numeric vector to smooth.}
-
-\item{k}{Integer window length.}
-}
-\value{
-Numeric vector of rolling means.
-}
 \description{
-Compute a right-aligned rolling mean with NA padding.
+Right-aligned rolling mean with NA padding.
 }
 \keyword{internal}

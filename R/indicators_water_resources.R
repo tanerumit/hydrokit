@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # Hashimoto-style performance metrics for water supply systems
 # =============================================================================
 #
@@ -157,7 +157,7 @@
 #' @param na_action Character scalar: "omit" (drop non-finite pairs) or "fail" (error).
 #' @param no_data Character scalar: value if no valid timesteps remain: "na" (default) or "zero".
 #'
-#' @return Numeric scalar in [0,1] (or NA_real_).
+#' @return Numeric scalar between 0 and 1 (or NA_real_).
 #' @export
 #'
 #' @examples
@@ -191,7 +191,7 @@ reliability_hashimoto <- function(obs_threshold,
 #' @param no_failure Character scalar: value if there are zero eligible failure states:
 #'   "na" (default), "one", or "zero".
 #'
-#' @return Numeric scalar in [0,1] (or NA_real_).
+#' @return Numeric scalar between 0 and 1 (or NA_real_).
 #' @export
 #'
 #' @examples
@@ -227,7 +227,7 @@ resilience_hashimoto <- function(obs_threshold,
 #' \deqn{V = E(M_t \mid S_t=0)} (default statistic = mean).
 #'
 #' @details
-#' This is the common “state-based” vulnerability variant. If you need event-based
+#' This is the common state-based vulnerability variant. If you need event-based
 #' vulnerability (e.g., mean of event-integrated deficits), implement separately
 #' to avoid mixing definitions.
 #'
@@ -281,7 +281,7 @@ vulnerability_hashimoto <- function(obs_threshold,
 #' @param na_action Character scalar: "omit" (drop non-finite pairs) or "fail" (error).
 #' @param no_data Character scalar: value if no valid timesteps remain: "na" (default) or "zero".
 #'
-#' @return Numeric scalar (events per timestep) in [0,1] (or NA_real_).
+#' @return Numeric scalar (events per timestep) between 0 and 1 (or NA_real_).
 #' @export
 failure_frequency <- function(obs_threshold,
                               sim_supply,
@@ -716,3 +716,4 @@ failure_metrics_hashimoto <- function(obs_threshold,
     mean_event_peak_deficit = mean_event_peak_deficit
   )
 }
+
