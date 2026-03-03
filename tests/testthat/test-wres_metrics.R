@@ -2,7 +2,7 @@
 # vulnerability_hashimoto(), failure_frequency(), mean_failure_duration(),
 # mean_recovery_time(), vulnerability_event_hashimoto(),
 # extract_state_hashimoto(), failure_metrics_hashimoto()
-# Path: R/wres_metrics.R
+# Path: R/wr-metrics.R
 
 test_that("Hashimoto core metrics return expected values on simple series", {
   obs <- rep(10, 6)

@@ -92,7 +92,7 @@ compute_dpi <- function(spei_values, threshold = -1) {
 #'   before standardization.
 #' @param dist Character string indicating the distribution to fit.
 #'   Common choices are `"log-Logistic"` (default) or `"Gamma"`.
-#'   See \link[SPEI:spei]{SPEI::spei()} for available options.
+#'   See \code{SPEI::spei()} for available options.
 #' @param ref_start Optional numeric vector of length two (e.g., \code{c(1981, 1)})
 #'   specifying the start year and month of the reference period used for
 #'   fitting the distribution. If \code{NULL}, the entire record is used.
@@ -105,7 +105,7 @@ compute_dpi <- function(spei_values, threshold = -1) {
 #'   the series is assumed to begin at (1, 1) with monthly frequency.
 #'
 #' @details
-#' The function acts as a simplified wrapper around \code{\link[SPEI:spei]{SPEI::spei()}}.
+#' The function acts as a simplified wrapper around \code{SPEI::spei()}.
 #' It is designed for convenience in workflows where precipitation (P),
 #' evapotranspiration (PET), and dates are stored as plain vectors rather
 #' than time-series objects. The resulting SPEI values are standardized
@@ -136,8 +136,8 @@ compute_dpi <- function(spei_values, threshold = -1) {
 #'
 #' @seealso
 #' \code{\link{calculate_spi}} for the precipitation-only variant (SPI),
-#' \code{\link[SPEI:spei]{SPEI::spei()}} for the underlying implementation,
-#' and \code{\link[SPEI:spi]{SPEI::spi()}} for the SPEI package's SPI function.
+#' \code{SPEI::spei()} for the underlying implementation,
+#' and \code{SPEI::spi()} for the SPEI package's SPI function.
 #'
 #' @examples
 #' \dontrun{
@@ -171,18 +171,18 @@ calculate_spei <- function(P, PET, scale = 3,
   if (!is.null(dates)) {
     start_year  <- as.numeric(format(min(dates), "%Y"))
     start_month <- as.numeric(format(min(dates), "%m"))
-    D <- ts(D, start = c(start_year, start_month), frequency = 12)
+    D <- stats::ts(D, start = c(start_year, start_month), frequency = 12)
   } else {
-    D <- ts(D, frequency = 12)
+    D <- stats::ts(D, frequency = 12)
   }
 
   # Capture warnings from the SPEI fit rather than suppressing them entirely.
-  # The SPEI package can produce console output via cat(); capture.output()
+  # The SPEI package can produce console output via cat(); utils::capture.output()
   # absorbs that. Genuine warnings are collected and re-surfaced below.
   fit_warnings <- character(0)
   spei_obj <- withCallingHandlers(
     suppressMessages({
-      tmp <- capture.output(
+      tmp <- utils::capture.output(
         res <- SPEI::spei(D,
                           scale = scale,
                           distribution = dist,
@@ -232,7 +232,7 @@ calculate_spei <- function(P, PET, scale = 3,
 #' @param P Numeric vector of monthly precipitation values (mm).
 #' @param scale Integer. Accumulation period in months (e.g., 1, 3, 6, 12).
 #' @param dist Character string indicating the distribution to fit.
-#'   Default \code{"Gamma"}. See \code{\link[SPEI:spi]{SPEI::spi()}} for
+#'   Default \code{"Gamma"}. See \code{SPEI::spi()} for
 #'   available options.
 #' @param ref_start Optional numeric vector of length two (e.g., \code{c(1981, 1)})
 #'   specifying the start of the reference period for fitting.
@@ -243,7 +243,7 @@ calculate_spei <- function(P, PET, scale = 3,
 #'   automatically. If omitted, the series begins at \code{c(1, 1)}.
 #'
 #' @details
-#' This is a convenience wrapper around \code{\link[SPEI:spi]{SPEI::spi()}}
+#' This is a convenience wrapper around \code{SPEI::spi()}
 #' analogous to \code{\link{calculate_spei}}. The SPI is widely used in
 #' operational drought monitoring and requires only precipitation as input,
 #' making it applicable when evapotranspiration data are unavailable.
@@ -264,7 +264,7 @@ calculate_spei <- function(P, PET, scale = 3,
 #'
 #' @seealso
 #' \code{\link{calculate_spei}} for the SPEI variant (requires PET),
-#' \code{\link[SPEI:spi]{SPEI::spi()}} for the underlying implementation.
+#' \code{SPEI::spi()} for the underlying implementation.
 #'
 #' @examples
 #' \dontrun{
@@ -296,15 +296,15 @@ calculate_spi <- function(P, scale = 3,
   Pts <- if (!is.null(dates)) {
     start_year  <- as.numeric(format(min(dates), "%Y"))
     start_month <- as.numeric(format(min(dates), "%m"))
-    ts(P, start = c(start_year, start_month), frequency = 12)
+    stats::ts(P, start = c(start_year, start_month), frequency = 12)
   } else {
-    ts(P, frequency = 12)
+    stats::ts(P, frequency = 12)
   }
 
   fit_warnings <- character(0)
   spi_obj <- withCallingHandlers(
     suppressMessages({
-      tmp <- capture.output(
+      tmp <- utils::capture.output(
         res <- SPEI::spi(Pts,
                          scale = scale,
                          distribution = dist,

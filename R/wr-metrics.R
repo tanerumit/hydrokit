@@ -33,9 +33,9 @@
   }
 }
 
-.state_from_threshold_supply_ <- function(obs_threshold,
-                                          sim_supply,
-                                          na_action = c("omit", "fail")) {
+.wr_state_from_threshold_supply <- function(obs_threshold,
+                                            sim_supply,
+                                            na_action = c("omit", "fail")) {
 
   na_action <- match.arg(na_action)
 
@@ -80,22 +80,22 @@
   )
 }
 
-.fail_run_lengths_ <- function(is_fail) {
+.wr_fail_run_lengths <- function(is_fail) {
   if (length(is_fail) == 0L) return(integer(0))
   r <- rle(is_fail)
   as.integer(r$lengths[r$values])
 }
 
-.n_fail_events_ <- function(is_fail) {
+.wr_n_fail_events <- function(is_fail) {
   if (length(is_fail) == 0L) return(0L)
   r <- rle(is_fail)
   as.integer(sum(r$values))
 }
 
 # Transition-aligned success/failure for resilience
-.transitions_from_threshold_supply_ <- function(obs_threshold,
-                                                sim_supply,
-                                                na_action = c("omit", "fail")) {
+.wr_transitions_from_threshold_supply <- function(obs_threshold,
+                                                  sim_supply,
+                                                  na_action = c("omit", "fail")) {
 
   na_action <- match.arg(na_action)
 
@@ -170,7 +170,7 @@ reliability_hashimoto <- function(obs_threshold,
                                   no_data = c("na", "zero")) {
 
   no_data <- match.arg(no_data)
-  st <- .state_from_threshold_supply_(obs_threshold, sim_supply, na_action = na_action)
+  st <- .wr_state_from_threshold_supply(obs_threshold, sim_supply, na_action = na_action)
 
   if (st$n_steps == 0L) {
     return(if (no_data == "na") NA_real_ else 0)
@@ -205,7 +205,7 @@ resilience_hashimoto <- function(obs_threshold,
 
   no_failure <- match.arg(no_failure)
 
-  tr <- .transitions_from_threshold_supply_(obs_threshold, sim_supply, na_action = na_action)
+  tr <- .wr_transitions_from_threshold_supply(obs_threshold, sim_supply, na_action = na_action)
 
   if (tr$n_transitions == 0L) return(NA_real_)
 
@@ -254,7 +254,7 @@ vulnerability_hashimoto <- function(obs_threshold,
   statistic <- match.arg(statistic)
   no_failure <- match.arg(no_failure)
 
-  st <- .state_from_threshold_supply_(obs_threshold, sim_supply, na_action = na_action)
+  st <- .wr_state_from_threshold_supply(obs_threshold, sim_supply, na_action = na_action)
 
   if (st$n_steps == 0L) return(NA_real_)
 
@@ -289,11 +289,11 @@ failure_frequency <- function(obs_threshold,
                               no_data = c("na", "zero")) {
 
   no_data <- match.arg(no_data)
-  st <- .state_from_threshold_supply_(obs_threshold, sim_supply, na_action = na_action)
+  st <- .wr_state_from_threshold_supply(obs_threshold, sim_supply, na_action = na_action)
 
   if (st$n_steps == 0L) return(if (no_data == "na") NA_real_ else 0)
 
-  n_fail_events <- .n_fail_events_(st$is_fail)
+  n_fail_events <- .wr_n_fail_events(st$is_fail)
   n_fail_events / st$n_steps
 }
 
@@ -314,11 +314,11 @@ mean_failure_duration <- function(obs_threshold,
                                   no_failure = c("na", "zero")) {
 
   no_failure <- match.arg(no_failure)
-  st <- .state_from_threshold_supply_(obs_threshold, sim_supply, na_action = na_action)
+  st <- .wr_state_from_threshold_supply(obs_threshold, sim_supply, na_action = na_action)
 
   if (st$n_steps == 0L) return(NA_real_)
 
-  fail_runs <- .fail_run_lengths_(st$is_fail)
+  fail_runs <- .wr_fail_run_lengths(st$is_fail)
   if (length(fail_runs) == 0L) return(if (no_failure == "na") NA_real_ else 0)
 
   mean(fail_runs)
@@ -406,7 +406,7 @@ vulnerability_event_hashimoto <- function(obs_threshold,
   event_agg <- match.arg(event_agg)
   no_failure <- match.arg(no_failure)
 
-  st <- .state_from_threshold_supply_(obs_threshold, sim_supply, na_action = na_action)
+  st <- .wr_state_from_threshold_supply(obs_threshold, sim_supply, na_action = na_action)
 
   if (st$n_steps == 0L) {
     if (return_components) {

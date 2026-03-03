@@ -1,5 +1,5 @@
 # Functions under test: max_dry_spell(), compute_dpi()
-# Path: R/drought_utils.R
+# Path: R/drought-metrics.R
 
 test_that("max_dry_spell computes longest run below threshold", {
   p <- c(0, 0.2, 0.5, 3, 0, 0, 0, 5)

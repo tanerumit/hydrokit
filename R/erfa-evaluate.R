@@ -26,12 +26,15 @@
 #'   with names `HF`, `MF`, `LF`, `RFC`, and `IF`. Values must be finite and `>= 0`.
 #'
 #' @param metric_set Character scalar metric-set name. Currently supports `"erfa70"`
-#'   which resolves the full expanded mapping via `.hydro_registry_erfa70_expanded()`.
+#'   which resolves the full expanded mapping via \code{.flow_registry_erfa70_expanded()}.
 #'
 #' @param group_cols Character vector of grouping columns to evaluate ERFA per level/combination.
+#' @param scenario_cols Character vector of scenario-only grouping columns that
+#'   are required in \code{scenario_tbl} but not in \code{baseline_tbl}. These
+#'   columns are carried through to output summaries.
 #'   Default `NULL` computes a single ERFA result for the entire tables. Examples:
 #'   - `group_cols = "site"`: compute per site
-#'   - `group_cols = c("site", "scenario")`: compute per siteÃ—scenario combination
+#'   - `group_cols = c("site", "scenario")`: compute per siteÃƒâ€”scenario combination
 #'
 #' @return A list of class \code{erfa_result} with:
 #'   - `detail`: per-metric comparisons including registry metadata and computed fields.
@@ -73,7 +76,7 @@ evaluate_erfa_class <- function(
 
   .hydro_erfa_resolve_metric_def <- function(metric_set) {
     metric_set <- as.character(metric_set)[1]
-    if (identical(metric_set, "erfa70")) return(.hydro_registry_erfa70_expanded())
+    if (identical(metric_set, "erfa70")) return(.flow_registry_erfa70_expanded())
     stop("Unknown metric_set for ERFA evaluation: ", metric_set, call. = FALSE)
   }
 
@@ -205,7 +208,7 @@ evaluate_erfa_class <- function(
 
   # ---- summaries --------------------------------------------------------------
 
-  # Per ERFA group within each group_cols Ã— scenario_cols combination
+  # Per ERFA group within each group_cols Ãƒâ€” scenario_cols combination
   summary_keys <- c(group_cols, scenario_cols, "group")
 
   summary_tbl <- df |>
@@ -217,7 +220,7 @@ evaluate_erfa_class <- function(
       .groups = "drop"
     )
 
-  # Overall row within each group_cols Ã— scenario_cols combination
+  # Overall row within each group_cols Ãƒâ€” scenario_cols combination
   overall_tbl <- summary_tbl |>
     dplyr::group_by(dplyr::across(dplyr::all_of(c(group_cols, scenario_cols)))) |>
     dplyr::summarise(
@@ -254,9 +257,9 @@ evaluate_erfa_class <- function(
         risk_class,
         levels = 0:3,
         labels = c(
-          "No change (\U0001F7E6 Blue)",
-          "Low (\U0001F7E9 Green)",
-          "Medium (\U0001F7E7 Amber)",
+          "No change (\U0001F7E9 Green)",
+          "Low (\U0001F7E8 Yellow)",
+          "Medium (\U0001F7E7 Orange)",
           "High (\U0001F7E5 Red)"
         )
       ),

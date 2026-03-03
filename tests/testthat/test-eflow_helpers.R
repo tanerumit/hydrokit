@@ -1,7 +1,7 @@
 # Functions under test: .hydro_as_date(), .hydro_as_numeric(), .hydro_safe_max(),
 # .hydro_safe_min(), .hydro_safe_which_max(), .hydro_safe_which_min(),
 # .hydro_safe_mean(), .hydro_seq_stats()
-# Path: R/eflow_helpers.R
+# Path: R/utils.R
 
 test_that("date and numeric coercion helpers validate inputs", {
   expect_identical(hydrokit:::.hydro_as_date("2001-01-01"), as.Date("2001-01-01"))

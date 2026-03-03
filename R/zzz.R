@@ -10,7 +10,7 @@
   # to calculate_hydro_metrics(). Failures here indicate a packaging bug, not a
   # user error, so we surface them early.
   tryCatch(
-    .hydro_validate_registry(strict = TRUE),
+    .flow_validate_registry(strict = TRUE),
     error = function(e) {
       warning(
         "hydrokit: metric registry validation failed on load: ", conditionMessage(e),

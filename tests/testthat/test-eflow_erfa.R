@@ -1,5 +1,5 @@
 # Functions under test: evaluate_erfa_class()
-# Path: R/eflow_erfa.R
+# Path: R/erfa-evaluate.R
 
 test_that("evaluate_erfa_class uses per-group sensi_threshold", {
   metric_def <- hydrokit:::.hydro_registry_erfa70_expanded()
